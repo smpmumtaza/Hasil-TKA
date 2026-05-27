@@ -29,12 +29,7 @@
             display: inline-block;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .success-check {
-            stroke-dasharray: 50;
-            stroke-dashoffset: 50;
-            animation: drawCheck 0.5s ease-out forwards;
-        }
-        @keyframes drawCheck { to { stroke-dashoffset: 0; } }
+        @keyframes fadeIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
     </style>
 </head>
 <body class="bg-pattern min-h-screen flex items-center justify-center p-4 md:p-6">
@@ -52,16 +47,18 @@
         <p class="text-gray-500 mt-2 text-sm md:text-base">Masukkan data Anda untuk mendapatkan tautan dokumen hasil Tes Kemampuan Akademik</p>
     </div>
 
+    <!-- ===== NOTIFICATION MODAL ===== -->
+    <div id="notifModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center animate-[fadeIn_0.2s_ease]">
+            <div id="notifIcon" class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"></div>
+            <h3 id="notifTitle" class="text-lg font-bold text-gray-900 mb-2"></h3>
+            <p id="notifMessage" class="text-sm text-gray-500 mb-6"></p>
+            <button onclick="closeNotif()" id="notifBtn" class="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition">OK</button>
+        </div>
+    </div>
+
     <!-- Card Form -->
     <div class="bg-white rounded-2xl card-shadow p-6 md:p-8 border border-gray-100">
-
-        <!-- Alert -->
-        <div id="alert" class="hidden mb-6 p-4 rounded-xl text-sm font-medium flex items-start gap-3" role="alert">
-            <span id="alertIcon" class="flex-shrink-0 mt-0.5"></span>
-            <span id="alertMessage"></span>
-            <button onclick="document.getElementById('alert').classList.add('hidden')" class="ml-auto flex-shrink-0 text-gray-400 hover:text-gray-600">&times;</button>
-        </div>
-
         <form id="formTKA" class="space-y-5">
 
             <!-- Email -->
@@ -114,21 +111,31 @@ const form = document.getElementById('formTKA');
 const btn = document.getElementById('btnSubmit');
 const btnText = document.getElementById('btnText');
 const btnSpinner = document.getElementById('btnSpinner');
-const alert = document.getElementById('alert');
-const alertMsg = document.getElementById('alertMessage');
-const alertIcon = document.getElementById('alertIcon');
+const notifModal = document.getElementById('notifModal');
+const notifIcon = document.getElementById('notifIcon');
+const notifTitle = document.getElementById('notifTitle');
+const notifMessage = document.getElementById('notifMessage');
+const notifBtn = document.getElementById('notifBtn');
 
-function showAlert(type, msg) {
-    alert.className = 'flex items-start gap-3 p-4 rounded-xl text-sm font-medium mb-6';
+function closeNotif() {
+    notifModal.classList.add('hidden');
+    window.location.href = '/Hasil-TKA/';
+}
+
+function showNotif(type, msg) {
     if (type === 'success') {
-        alert.classList.add('bg-green-50', 'text-green-800', 'border', 'border-green-200');
-        alertIcon.innerHTML = `<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+        notifIcon.className = 'w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-green-100';
+        notifIcon.innerHTML = `<svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>`;
+        notifTitle.textContent = 'Berhasil!';
+        notifBtn.className = 'w-full py-2.5 rounded-xl text-sm font-semibold text-white transition bg-green-600 hover:bg-green-700';
     } else {
-        alert.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-        alertIcon.innerHTML = `<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+        notifIcon.className = 'w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-red-100';
+        notifIcon.innerHTML = `<svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>`;
+        notifTitle.textContent = 'Gagal!';
+        notifBtn.className = 'w-full py-2.5 rounded-xl text-sm font-semibold text-white transition bg-red-600 hover:bg-red-700';
     }
-    alertMsg.textContent = msg;
-    alert.classList.remove('hidden');
+    notifMessage.textContent = msg;
+    notifModal.classList.remove('hidden');
 }
 
 function setLoading(loading) {
@@ -153,28 +160,27 @@ function formatDateCompact(ddmmyyyy) {
 
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    alert.classList.add('hidden');
 
     const email = document.getElementById('email').value.trim();
     const nisn = document.getElementById('nisn').value.trim();
     const tanggal = document.getElementById('tanggal').value;
 
     if (!email || !nisn || !tanggal) {
-        showAlert('error', 'Harap isi semua field.');
+        showNotif('error', 'Harap isi semua field.');
         return;
     }
 
     if (!/^\d{10}$/.test(nisn)) {
-        showAlert('error', 'NISN harus 10 digit angka.');
+        showNotif('error', 'NISN harus 10 digit angka.');
         return;
     }
 
     setLoading(true);
 
-    const webAppUrl = 'https://script.google.com/macros/s/AKfycbye5qcIW5JPCmjGFURyNRC9KOPQYLaZioyluWD-n_DC5ukIWl7eYBIM83pgl6gKs3ld/exec'; // GANTI dengan URL web app dari Google Apps Script
+    const webAppUrl = ''; // GANTI dengan URL web app dari Google Apps Script
 
     try {
-        const res = await fetch(webAppUrl, {
+        await fetch(webAppUrl, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
@@ -187,14 +193,13 @@ form.addEventListener('submit', async (e) => {
             })
         });
 
-        showAlert('success', 'Permintaan berhasil dikirim! Silakan cek email Anda dalam beberapa menit.');
-
+        showNotif('success', 'Email berhasil dikirim! Silakan cek inbox Anda.');
         document.getElementById('email').value = '';
         document.getElementById('nisn').value = '';
         document.getElementById('tanggal').value = '';
 
     } catch (err) {
-        showAlert('error', 'Gagal mengirim. Silakan coba lagi nanti atau hubungi admin.');
+        showNotif('error', 'Gagal mengirim. Silakan coba lagi nanti.');
     } finally {
         setLoading(false);
     }
