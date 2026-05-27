@@ -85,10 +85,10 @@
                 <div>
                     <label for="tanggal" class="block text-sm font-semibold text-gray-700 mb-1.5">Tanggal Lahir <span class="text-gray-400 font-normal">(dd/mm/yyyy)</span></label>
                     <input type="date" id="tanggal" name="tanggal" required
-                           min="2009-01-01" max="2015-12-31"
+                           min="2010-01-01" max="2011-12-31"
                            onfocus="this.showPicker?.()"
                            class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none input-transition" />
-                    <p class="text-xs text-amber-600 mt-1.5">Rentang tahun: 2009 — 2015</p>
+                    <p class="text-xs text-amber-600 mt-1.5">Rentang tahun: 2010 — 2011</p>
                 </div>
             </div>
 
@@ -177,8 +177,8 @@ form.addEventListener('submit', async (e) => {
     }
 
     const year = parseInt(tanggal.split('-')[0], 10);
-    if (year < 2009 || year > 2015) {
-        showNotif('error', 'Tanggal lahir harus antara tahun 2009 — 2015.');
+    if (year < 2010 || year > 2011) {
+        showNotif('error', 'Tanggal lahir harus antara tahun 2010 — 2011.');
         return;
     }
 
