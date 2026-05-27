@@ -121,14 +121,13 @@ const notifBtn = document.getElementById('notifBtn');
 
 function closeNotif() {
     notifModal.classList.add('hidden');
-    window.location.href = '/Hasil-TKA/';
 }
 
 function showNotif(type, msg) {
     if (type === 'success') {
         notifIcon.className = 'w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-green-100';
         notifIcon.innerHTML = `<svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>`;
-        notifTitle.textContent = 'Berhasil!';
+        notifTitle.textContent = 'Permintaan Terkirim';
         notifBtn.className = 'w-full py-2.5 rounded-xl text-sm font-semibold text-white transition bg-green-600 hover:bg-green-700';
     } else {
         notifIcon.className = 'w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-red-100';
@@ -136,7 +135,7 @@ function showNotif(type, msg) {
         notifTitle.textContent = 'Gagal!';
         notifBtn.className = 'w-full py-2.5 rounded-xl text-sm font-semibold text-white transition bg-red-600 hover:bg-red-700';
     }
-    notifMessage.textContent = msg;
+    notifMessage.innerHTML = msg;
     notifModal.classList.remove('hidden');
 }
 
@@ -201,7 +200,7 @@ form.addEventListener('submit', async (e) => {
             })
         });
 
-        showNotif('success', 'Email berhasil dikirim! Silakan cek inbox Anda.');
+        showNotif('success', 'Email telah dikirim. Cek <b>Inbox</b> atau folder <b>Spam</b>.<br/>Jika masuk Spam, pilih <b>&quot;Laporkan bukan spam&quot;</b> agar email berikutnya masuk Inbox.');
         document.getElementById('email').value = '';
         document.getElementById('nisn').value = '';
         document.getElementById('tanggal').value = '';

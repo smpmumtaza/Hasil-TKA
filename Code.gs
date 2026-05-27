@@ -132,7 +132,7 @@ function buildEmail(nisn, tanggal, fileName, fileUrl) {
         <tr>
           <td style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:32px 40px 28px;text-align:center;">
             <div style="display:inline-block;width:56px;height:56px;background:rgba(255,255,255,0.15);border-radius:14px;line-height:56px;text-align:center;margin-bottom:12px;">
-              <span style="font-size:28px;">📄</span>
+              <span style="font-size:28px;font-weight:300;">PDF</span>
             </div>
             <h1 style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 4px;">Hasil Tes Kemampuan Akademik (TKA)</h1>
             <p style="color:rgba(255,255,255,0.85);font-size:14px;margin:0;">SMP Mumtaza — Tahun Ajaran ${currentYear}</p>
@@ -190,7 +190,7 @@ function buildEmail(nisn, tanggal, fileName, fileUrl) {
                     <li>Tautan dapat diakses oleh siapa saja yang memiliki tautan ini</li>
                     <li>Simpan dokumen ini untuk keperluan administrasi</li>
                     <li>Dokumen bersifat rahasia dan hanya untuk peserta</li>
-                    <li style="list-style:none;margin-left:-18px;margin-top:6px;">📧 Kendala: <a href="mailto:kalistaningtyas@smpmumtaza.sch.id" style="color:#2563eb;text-decoration:underline;">kalistaningtyas@smpmumtaza.sch.id</a></li>
+                    <li style="list-style:none;margin-left:-18px;margin-top:6px;">Kendala: <a href="mailto:kalistaningtyas@smpmumtaza.sch.id" style="color:#2563eb;text-decoration:underline;">kalistaningtyas@smpmumtaza.sch.id</a></li>
                   </ul>
                 </td>
               </tr>
