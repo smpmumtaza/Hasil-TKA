@@ -1,17 +1,16 @@
 /**
  * Google Apps Script - Pengiriman Hasil TKA SMP Mumtaza
- * 
+ *
  * Cara deploy:
- * 1. Buka script.google.com
+ * 1. Buka script.google.com (pakai akun Gmail)
  * 2. Buat project baru, paste kode ini
- * 3. Ganti FOLDER_ID dengan ID folder Google Drive hasil TKA
- * 4. Deploy > Deploy sebagai web app > Execute as: Me, Access: Anyone
- * 5. Copy URL web app ke index.html (ganti APPS_SCRIPT_WEBAPP_URL)
+ * 3. Deploy > Deploy sebagai web app > Execute as: Me, Access: Anyone
+ * 4. Copy URL web app ke index.html (ganti APPS_SCRIPT_WEBAPP_URL)
  */
 
 // ========== KONFIGURASI ==========
 const FOLDER_ID = '1Yh6vG5KX__ZS3elXBMFk1e6p7YGGZxqV';
-const SHEET_ID = ''; // opsional, untuk log
+const LOG_SHEET_ID = ''; // opsional, biarkan kosong nanti auto-buat
 // =================================
 
 function doPost(e) {
@@ -20,6 +19,7 @@ function doPost(e) {
     const { email, nisn, tanggal, tanggalFormat, tanggalCompact } = data;
 
     if (!email || !nisn || !tanggalCompact) {
+      logToSheet(email || '-', nisn || '-', tanggalFormat || '-', '-', 'GAGAL: Data tidak lengkap');
       return respond(400, 'Data tidak lengkap.');
     }
 
@@ -28,16 +28,14 @@ function doPost(e) {
     const files = folder.getFilesByName(fileName);
 
     if (!files.hasNext()) {
+      logToSheet(email, nisn, tanggalFormat, fileName, 'GAGAL: File tidak ditemukan');
       return respond(404, `File ${fileName} tidak ditemukan.`);
     }
 
     const file = files.next();
-
-    // Set sharing agar siapa saja bisa lihat
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     const fileUrl = file.getUrl();
 
-    // Kirim email (via GmailApp agar tidak masuk spam)
     const subject = `Hasil Tes Kemampuan Akademik (TKA) - SMP Mumtaza`;
     const htmlBody = buildEmail(nisn, tanggalFormat, fileName, fileUrl);
 
@@ -47,19 +45,26 @@ function doPost(e) {
       replyTo: 'kalistaningtyas@smpmumtaza.sch.id'
     });
 
-    // Log ke sheet (opsional)
-    if (SHEET_ID) {
-      logToSheet(email, nisn, fileName, fileUrl);
-    }
-
+    logToSheet(email, nisn, tanggalFormat, fileName, 'SUKSES', fileUrl);
     return respond(200, `Email berhasil dikirim ke ${email}`);
 
   } catch (err) {
+    logToSheet('-', '-', '-', '-', 'ERROR: ' + err.message);
     return respond(500, 'Terjadi kesalahan server: ' + err.message);
   }
 }
 
-function doGet() {
+function doGet(e) {
+  const action = e && e.parameter ? e.parameter.action : '';
+
+  if (action === 'getLogs') {
+    const token = e.parameter.token || '';
+    if (token !== 'admin123') {
+      return respond(403, 'Unauthorized');
+    }
+    return getLogs();
+  }
+
   return HtmlService.createHtmlOutput('Service is running.');
 }
 
@@ -67,6 +72,43 @@ function respond(code, message) {
   return ContentService
     .createTextOutput(JSON.stringify({ code, message }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getLogs() {
+  const sheet = getOrCreateSheet();
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const rows = data.slice(1).reverse().map(row => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = row[i]);
+    return obj;
+  });
+  return ContentService
+    .createTextOutput(JSON.stringify(rows))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getOrCreateSheet() {
+  if (LOG_SHEET_ID) {
+    try {
+      return SpreadsheetApp.openById(LOG_SHEET_ID).getActiveSheet();
+    } catch (e) {
+      // fallback ke buat baru
+    }
+  }
+  const ss = SpreadsheetApp.create('Log Hasil TKA');
+  const sheet = ss.getActiveSheet();
+  sheet.appendRow(['Timestamp', 'Email', 'NISN', 'Tanggal', 'File', 'Status', 'URL']);
+  return sheet;
+}
+
+function logToSheet(email, nisn, tanggal, fileName, status, fileUrl) {
+  try {
+    const sheet = getOrCreateSheet();
+    sheet.appendRow([new Date(), email, nisn, tanggal, fileName, status, fileUrl || '']);
+  } catch (e) {
+    console.warn('Gagal log ke sheet:', e.message);
+  }
 }
 
 function buildEmail(nisn, tanggal, fileName, fileUrl) {
@@ -87,7 +129,6 @@ function buildEmail(nisn, tanggal, fileName, fileUrl) {
 
       <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
 
-        <!-- Header -->
         <tr>
           <td style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:32px 40px 28px;text-align:center;">
             <div style="display:inline-block;width:56px;height:56px;background:rgba(255,255,255,0.15);border-radius:14px;line-height:56px;text-align:center;margin-bottom:12px;">
@@ -98,7 +139,6 @@ function buildEmail(nisn, tanggal, fileName, fileUrl) {
           </td>
         </tr>
 
-        <!-- Body -->
         <tr>
           <td style="padding:32px 40px 24px;">
 
@@ -107,11 +147,10 @@ function buildEmail(nisn, tanggal, fileName, fileUrl) {
             </p>
 
             <p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 24px;">
-              Dengan ini kami sampaikan bahwa dokumen hasil <strong>Tes Kemampuan Akademik (TKA)</strong> Anda telah tersedia. 
+              Dengan ini kami sampaikan bahwa dokumen hasil <strong>Tes Kemampuan Akademik (TKA)</strong> Anda telah tersedia.
               Silakan akses melalui tautan yang tercantum di bawah.
             </p>
 
-            <!-- Info Card -->
             <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:24px;">
               <tr>
                 <td style="padding:20px 24px;">
@@ -133,7 +172,6 @@ function buildEmail(nisn, tanggal, fileName, fileUrl) {
               </tr>
             </table>
 
-            <!-- CTA Button -->
             <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
               <tr>
                 <td align="center">
@@ -145,7 +183,6 @@ function buildEmail(nisn, tanggal, fileName, fileUrl) {
               </tr>
             </table>
 
-            <!-- Notes -->
             <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fffbeb;border:1px solid #fde68a;border-radius:10px;margin-bottom:24px;">
               <tr>
                 <td style="padding:16px 20px;">
@@ -162,7 +199,6 @@ function buildEmail(nisn, tanggal, fileName, fileUrl) {
           </td>
         </tr>
 
-        <!-- Footer -->
         <tr>
           <td style="background-color:#f8fafc;border-top:1px solid #e2e8f0;padding:28px 40px 24px;text-align:center;">
             <div style="margin-bottom:12px;">
@@ -194,13 +230,4 @@ function buildEmail(nisn, tanggal, fileName, fileUrl) {
 
 </body>
 </html>`;
-}
-
-function logToSheet(email, nisn, fileName, fileUrl) {
-  try {
-    const sheet = SpreadsheetApp.openById(SHEET_ID).getActiveSheet();
-    sheet.appendRow([new Date(), email, nisn, fileName, fileUrl]);
-  } catch (e) {
-    console.warn('Gagal log ke sheet:', e.message);
-  }
 }
